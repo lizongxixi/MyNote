@@ -972,6 +972,117 @@ portainer/portainer   latest    580c0e4e98b0   14 months ago   79.1MB
 
 # 容器数据卷
 
+## docker理念回顾
+
+将应用和环境打包成一个镜像
+
+数据？如果数据都在容器中，那么如果把容器删除，那么数据就会丢失！ ==需求：数据可以持久化==
+
+容器之间可以有一个数据共享的技术！Docker容器中产生的数据，可以同步到本地！
+
+卷技术：目录的挂载，可以把容器内的目录，挂载到Linux上面
+
+![image-20220612105033880](C:\Users\lixueting\AppData\Roaming\Typora\typora-user-images\image-20220612105033880.png)
+
+总结一句话：容器的持久化和同步操作！容器间是可以进行数据共享的！
+
+## 使用数据卷
+
+方式一：直接使用命令来挂载
+
+```shell
+docker run -it -v 主机目录 容器内端口
+[root@lzx home]# docker run -it -v /home/ceshi:/home centos bash
+
+#启动起来之后可以在宿主机（也就是服务器中）通过docker inspect 容器id查看是否挂载成功
+[root@lzx home]#  docker inspect 2e7
+
+```
+
+![image-20220612112652563](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220612112652563.png)
+
+容器和宿主使用同一份数据，就是文件的挂载
+
+![image-20220612141000756](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220612141000756.png)
+
+
+
+## 实战：安装MySQL
+
+思考：MySQL的数据持久化的问题！
+
+```shell
+# 获取镜像
+[root@lzx ceshi]# docker pull mysql:5.7
+
+#运行容器的时候需要进行数据挂载！ 安装启动mysql的时候，需要配置密码
+#官方测试 $ docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
+
+
+#实际上启动MySQL用的命令
+-d 后台运行
+-p 端口映射
+-v 数据卷挂载
+-e 环境配置
+--name 容器名字
+[root@lzx home]# docker run -d -p 3310:3306 -v /home/mysql/conf:/etc/mysql/conf.d -v /home/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --name mysql01 mysql:5.7
+4f6607a931208ee7445cf28aa4174eff57a316194f36d89b8969247a130a9efa
+
+# 启动成功之后，本地使用navicat来测试一下
+#navicat连接到服务器的3310端口 3310端口和容器内的3306端口进行映射
+# 在本地测试创建一个数据库，查看我们的映射路径是否ok
+```
+
+假设将容器删除，会发现容器挂载到服务器的数据卷依旧没有消失
+
+## 具名挂载和匿名挂载
+
+```shell
+# 匿名挂载
+-v 容器内的路径
+# 例子
+docker run -d -P --name nginx02 -v /etc/nginx nginx
+#查看所有volume的情况
+[root@lzx conf]# docker volume ls
+DRIVER    VOLUME NAME
+local     0029415bd06cc04bd38be231738bfb87f1b3605428980230e4add0403ff692ee
+local     f48058e532f70a12d1b6626e1c1009952110ff299090bbaa48be9f66751b25d6
+# 这种就是匿名挂载，在-v的时候只写了容器内的路径，没有写容器外的路径
+
+# 具名挂载
+[root@lzx conf]# docker run -d -P --name nginx03 -v have-name:/etc/nginx nginx
+0f81c2ed9cc4b0f7c5a2b2cc2b0d3edf89006ec082bdeef408e778492ea7e812
+[root@lzx conf]# docker volume ls
+DRIVER    VOLUME NAME
+local     have-name
+# 使用docker inspect 查看一下这个卷的具体信息
+```
+
+![image-20220612162637276](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220612162637276.png)
+
+所有docker容器中的卷，没有指定目录的情况下都是在 /var/lib/docker/volumes/xxx   里面
+
+![image-20220612162922053](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220612162922053.png)
+
+通过具名挂载可以很方便的找到我们的一个卷，所以在大多数情况下使用的是具名挂载
+
+```shell
+# 几种挂载类型的总结
+-v 容器内路径 # 匿名挂载
+-v 卷名：容器内路径 # 具名挂载
+-v /宿主机路径：容器内路径 #指定路径挂载
+```
+
+拓展：
+
+```shell
+# 通过 -v 容器内的路径:ro rw 改变读写权限
+ro read only #只读
+rw read write #可读
+[root@lzx conf]# docker run -d -P --name nginx03 -v have-name:/etc/nginx:ro nginx
+
+```
+
 
 
 # DockerFile
