@@ -1078,14 +1078,83 @@ local     have-name
 ```shell
 # 通过 -v 容器内的路径:ro rw 改变读写权限
 ro read only #只读
-rw read write #可读
+rw read write #可读可写
 [root@lzx conf]# docker run -d -P --name nginx03 -v have-name:/etc/nginx:ro nginx
 
 ```
 
 
 
+# 初始DockerFile
+
+Dockerfile是用来构建docker镜像的构建文件！脚本命令！
+
+通过这个脚本可以用来生成镜像，镜像是一层一层的，脚本就是一个个的命令，每个命令就是一层。
+
+```shell
+# 进行简单的测试
+1 [root@lzx home]# mkdir docker-test-volume
+# 创建了一个名为dockerfile1的文件，文件内容如下
+2 [root@lzx docker-test-volume]# vim dockerfile1
+FROM centos
+
+VOLUME ["volume01","volume02"]
+
+CMD echo "---end---"
+CMD bash
+3 [root@lzx docker-test-volume]# docker build -f dockerfile1 -t lizongxi/centos .
+
+注意：镜像名前面不能有/   也就/lizongxi/centos
+
+```
+
+![image-20220613204133337](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220613204133337.png)
+
+从图中可以发现每个命令就是镜像的一层
+
+
+
+同时发现已经生成了我们自己的镜像
+
+![image-20220613210157935](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220613210157935.png)
+
+启动生成的镜像
+
+```shell
+docker run -it 6fe
+```
+
+查看镜像的目录，发现了我们挂载的目录volume01 和 volume02
+
+![image-20220613210304952](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220613210304952.png)
+
+
+
+而外部（宿主主机）一定有与volume01和volume02同步的目录，上面是一个匿名挂载。
+
+在宿主主机查看当前容器的详细信息！！！注意不是在容器中
+
+![image-20220613221254375](https://raw.githubusercontent.com/lizongxixi/cloudImg/main/img/image-20220613221254375.png)
+
+发现了挂载在宿主主机的目录
+
+未来大多使用这种方式，因为我们会构建自己的镜像
+
+如果在构建镜像的时候没有挂载卷，那么需要手动挂载使用 -v 卷名：容器内的路径
+
 # DockerFile
+
+dockerfile 是用来构建docker镜像的文件！命令参数脚本！
+
+构建步骤：
+
+1 编写一个dockerfile 文件
+
+2 docker build 构建成为一个镜像
+
+3 docker run 运行镜像
+
+4 docker push 发布镜像（DockerHub、阿里云镜像仓库）
 
 
 
